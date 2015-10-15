@@ -7,6 +7,6 @@ return {
   	},
   	dependencies = {
   		"luvit/luvit",
-  		"b42nk/websocket"
+  		"b42nk/luvsocks"
 	}
 }

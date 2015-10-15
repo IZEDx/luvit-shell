@@ -1,0 +1,146 @@
+<html>
+	<head>
+    	<meta charset="utf-8">
+		<title>##TITLE##</title>
+		<style>
+			body {
+				color: #11EE11;
+				position: relative;
+			  	margin: 0;
+			  	padding: 0;
+				overflow: hidden;
+				left: 0; right: 0; top: 0; bottom: 0;
+			  	background-color: #000000;
+    			font-family: "Times New Roman", Times, serif;
+				font-size: 1em;
+			}
+
+			.console {
+			  float: center;
+			  width: 100%;
+			  margin-left: 1px;
+			}
+
+			.indicator {
+				float: left;
+				margin-left: 1px;
+				width: auto;
+			}
+
+			.field {
+				width: 50%;
+				background: none;
+				border: none;
+				outline: none;
+				color: #11EE11;
+				font-size: 1em;
+				margin-top: -1px;
+				margin-left: -1px;
+    			font-family: "Times New Roman", Times, serif;
+			}
+		</style>
+		<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+		<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+		<script src="http://raw.githubusercontent.com/b42nk/LuvSocks/master/js/luvsocks.js"></script>
+		<script>
+			exec_body_scripts= function(body_el) {
+				  // Finds and executes scripts in a newly added element's body.
+				  // Needed since innerHTML does not run scripts.
+				  //
+				  // Argument body_el is an element in the dom.
+
+				  function nodeName(elem, name) {
+				    return elem.nodeName && elem.nodeName.toUpperCase() ===
+				              name.toUpperCase();
+				  };
+
+				  function evalScript(elem) {
+				    var data = (elem.text || elem.textContent || elem.innerHTML || "" ),
+				        head = document.getElementsByTagName("head")[0] ||
+				                  document.documentElement,
+				        script = document.createElement("script");
+
+				    script.type = "text/javascript";
+				    try {
+				      // doesn't work on ie...
+				      script.appendChild(document.createTextNode(data));
+				    } catch(e) {
+				      // IE has funky script nodes
+				      script.text = data;
+				    }
+
+				    head.insertBefore(script, head.firstChild);
+				    head.removeChild(script);
+				  };
+
+				  // main section of function
+				  var scripts = [],
+				      script,
+				      children_nodes = body_el.childNodes,
+				      child,
+				      i;
+
+				  for (i = 0; children_nodes[i]; i++) {
+				    child = children_nodes[i];
+				    if (nodeName(child, "script" ) &&
+				      (!child.type || child.type.toLowerCase() === "text/javascript")) {
+				          scripts.push(child);
+				      }
+				  }
+
+				  for (i = 0; scripts[i]; i++) {
+				    script = scripts[i];
+				    if (script.parentNode) {script.parentNode.removeChild(script);}
+				    evalScript(scripts[i]);
+				  }
+			};
+
+			function cout(s){
+				var t = $('<div/>').text(s.replace(/ /g, ";:;:;"));
+				$('#console').html($('#console').html() + t.html().replace(/;:;:;/g, "&nbsp;") + "<br>")
+				$('#body').prop({scrollTop: $('#body').prop("scrollHeight")})
+			}
+
+
+			var socket;
+			function connect(){
+				socket = new LuvSocks("##WSHOST##", ##WSPORT##, false);
+				socket.on("connect", function(){
+				});
+
+				socket.on("disconnect", function(){
+					setTimeout(connect, 1000)
+				});
+
+				socket.on("cout", function(data){
+					if(data){
+						cout(data);
+					}
+				});
+
+				socket.on("indicator", function(data){
+					if(data.indicator){
+						$('#indicator').text(data.indicator).html($('#indicator').html() + "&nbsp;")
+					}
+				});
+			}
+			connect();
+		</script>
+	</head>
+
+	<body oncontextmenu="return false" id="body">
+	  <div id="console" class="console">
+	  </div>
+		<form id="form" method="post" action="#">
+			<div id="indicator" class="indicator"></div> <input autofocus class="field" name="chatLine" type="text" id="chatLine" placeHolder=""/>
+		</form>
+	</body>
+	<script>
+		$('#form').on("submit", function(event){
+			event.preventDefault();
+			cout($("#indicator").text() + $('#chatLine').val())
+			socket.send("input", $('#chatLine').val());
+			$('#chatLine').val("");
+		});
+	</script>
+</html>
