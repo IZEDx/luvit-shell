@@ -8,7 +8,7 @@
 				position: relative;
 			  	margin: 0;
 			  	padding: 0;
-				overflow: hidden;
+				overflow-x: hidden;
 				left: 0; right: 0; top: 0; bottom: 0;
 			  	background-color: #000000;
     			font-family: "Times New Roman", Times, serif;
@@ -41,7 +41,7 @@
 		</style>
 		<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 		<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-		<script src="http://raw.githubusercontent.com/b42nk/LuvSocks/master/js/luvsocks.js"></script>
+		<script src="http://rawgit.com/b42nk/LuvSocks/master/js/luvsocks.js"></script>
 		<script>
 			exec_body_scripts= function(body_el) {
 				  // Finds and executes scripts in a newly added element's body.
@@ -97,7 +97,8 @@
 
 			function cout(s){
 				var t = $('<div/>').text(s.replace(/ /g, ";:;:;"));
-				$('#console').html($('#console').html() + t.html().replace(/;:;:;/g, "&nbsp;") + "<br>")
+
+				$('#console').html($('#console').html() + t.html().replace(/;:;:;/g, "&nbsp;").replace(/\n/g, "<br>") + "<br>")
 				$('#body').prop({scrollTop: $('#body').prop("scrollHeight")})
 			}
 
@@ -106,10 +107,12 @@
 			function connect(){
 				socket = new LuvSocks("##WSHOST##", ##WSPORT##, false);
 				socket.on("connect", function(){
+					$('#console').html("");
 				});
 
 				socket.on("disconnect", function(){
-					setTimeout(connect, 1000)
+					cout("Connection lost. Trying to reconnect..")
+					setTimeout(connect, 5000)
 				});
 
 				socket.on("cout", function(data){

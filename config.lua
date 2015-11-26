@@ -3,10 +3,14 @@ exports.http = {
 }
 
 exports.ws = {
-	host = "localhost",
+	host = "1734.biz",
 	port = 1745
 }
 
 exports.users = {
 	root = "1234"
+}
+
+exports.commands = {
+	"cat", "cd", "help", "ls", "systeminfo"
 }

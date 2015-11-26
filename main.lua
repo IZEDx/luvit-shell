@@ -21,38 +21,35 @@ _G.config = require('./config.lua')
 
 --process.new = uv.Process.initialize
 
+_G.isWin = ffi.os:lower():find("win") 
+
 _G.shell = {} -- global variable holder
 shell.commands = {}
+shell.rootPath = isWin and "C:\\" or "/"
+shell.delimiter = isWin and "\\" or "/"
 
-
-_G.isWin = ffi.os:lower():find("win") 
 
 -- print(require('los').type())
 
 
----------------- Load commands
+------------- Load commands
 do
-	local files = fs.readdirSync("./commands")
-	if type(files) == "table" then
-		for k,v in pairs(files) do
-			local stats = fs.statSync("./commands/" .. tostring(v))
-			if stats.is_file then
-				local cmd = require("./commands/" .. tostring(v))
-				if cmd.name then
-					shell.commands[cmd.name] = cmd
-				end
+	for k,v in pairs(config.commands) do
+		local stats = fs.statSync("./commands/" .. tostring(v) .. ".lua")
+		if stats.type == "file" then
+			local cmd = require("./commands/" .. tostring(v) .. ".lua")
+			if cmd.name then
+				shell.commands[cmd.name] = cmd
 			end
 		end
 	end
 end
 
 
-
 ------------------ error handler
 process:on('error', function(v)
 	print(v)
 end)
-
 
 
 --------------- Initialize http server
@@ -91,8 +88,7 @@ Server:on("connect", function(client)
 		client:send("indicator", {indicator = i})
 	end
 
-	client.path = isWin and "C:\\" or "/"
-	client.rootPath = client.path
+	client.path = shell.rootPath
 	client:indicator("login as:")
 
 	client.onUsername = function(client, data)
@@ -112,20 +108,20 @@ Server:on("connect", function(client)
 		if not client.username or client.authenticated then return end
 		if data == config.users[client.username] then
 			client.authenticated = true
-			client:cout("zhell 1.0-stable #1 SMP " .. os.date() .. " " .. ffi.os .. ffi.arch)
+			client:cout("shell 1.0-stable #1 SMP " .. os.date() .. " " .. ffi.os .. ffi.arch)
 			client:cout(" ")
 			client:cout("The commands in this shell are free for use and may affect")
 			client:cout("the system they're ran on in a negative way. This should not")
 			client:cout("be used by an individual with no preceeding knowledge of this")
 			client:cout("particular product or the system it's run on.")
 			client:cout(" ")
-			client:cout("ZHELL comes with ABSOLUTELY NO WARRANTY, to the extent")
+			client:cout("This shell comes with ABSOLUTELY NO WARRANTY, to the extent")
 			client:cout("permitted by applicable law.")
 			client:cout("All copyright goes to IZED, b42.in, big thanks to luvit!")
-			client:indicator(client.username .. "@" .. config.ws.host .. ": " .. client.path .. "$")
+			client:indicator(client.username .. "@" .. config.ws.host .. ": " .. client.path .. " $")
 			print(client.ip .. " successfully logged in using " .. client.username)
 		else
-			client:cout("-zhell " .. data .. ": invalid password")
+			client:cout("-shell " .. data .. ": invalid password")
 			print(client.ip .. " failed logging into " .. client.username)
 		end
 	end
@@ -140,5 +136,18 @@ Server:on("connect", function(client)
 			client:onPassword(data)
 			return
 		end
+
+		local cmd, args = util.parseArgs(data)
+
+		if not cmd then return end
+		print(client.username .. "[" .. client.ip .. "]", "entered command", data)
+
+		local c = shell.commands[cmd]
+		if not c then
+			client:cout("-shell " .. cmd .. ": command not found, try \"help\"")
+			return
+		end
+
+		c.onExec(client, unpack(args))
 	end)
 end)
